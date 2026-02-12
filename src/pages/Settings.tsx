@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 
 const Settings = () => {
@@ -54,24 +55,28 @@ const Settings = () => {
           transition={{ delay: 0.1 }}
           className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
         >
-          <Button variant="ghost" className="w-full flex items-center justify-between p-4 h-auto hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl">
-                <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <Link to="/privacy">
+            <Button variant="ghost" className="w-full flex items-center justify-between p-4 h-auto hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl">
+                  <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="font-medium dark:text-white">Privacy & Data</span>
               </div>
-              <span className="font-medium dark:text-white">Privacy & Data</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-300" />
-          </Button>
-          <Button variant="ghost" className="w-full flex items-center justify-between p-4 h-auto hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-xl">
-                <Info className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </Button>
+          </Link>
+          <Link to="/about">
+            <Button variant="ghost" className="w-full flex items-center justify-between p-4 h-auto hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-xl">
+                  <Info className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <span className="font-medium dark:text-white">Over deze app</span>
               </div>
-              <span className="font-medium dark:text-white">Over deze app</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-300" />
-          </Button>
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </Button>
+          </Link>
         </motion.section>
 
         <div className="text-center text-slate-400 text-sm pt-4">
