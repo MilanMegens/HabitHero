@@ -4,7 +4,7 @@ import TaskCard from '../components/TaskCard';
 import AddTaskDialog from '../components/AddTaskDialog';
 import BottomNav from '../components/BottomNav';
 import { requestNotificationPermission } from '../lib/notifications';
-import { Sparkles, CalendarDays } from 'lucide-react';
+import { Sparkles, CalendarDays, Plus } from 'lucide-react';
 
 const Index = () => {
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
