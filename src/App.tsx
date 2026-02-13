@@ -8,6 +8,7 @@ import Settings from "./pages/Settings";
 import Streaks from "./pages/Streaks";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
+import AllTasks from "./pages/AllTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/streaks" element={<Streaks />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/all-tasks" element={<AllTasks />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

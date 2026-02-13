@@ -1,6 +1,6 @@
 import React from 'react';
 import BottomNav from '../components/BottomNav';
-import { Bell, Moon, Shield, Info, ChevronRight, Sun } from 'lucide-react';
+import { Bell, Moon, Shield, Info, ChevronRight, Sun, ListTodo } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
@@ -24,6 +24,25 @@ const Settings = () => {
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
+        >
+          <Link to="/all-tasks">
+            <Button variant="ghost" className="w-full flex items-center justify-between p-4 h-auto hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded-xl">
+                  <ListTodo className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="font-medium dark:text-white">Mijn Gewoontes</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </Button>
+          </Link>
+        </motion.section>
+
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
         >
           <div className="flex items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800">
@@ -52,7 +71,7 @@ const Settings = () => {
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
           className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
         >
           <Link to="/privacy">
