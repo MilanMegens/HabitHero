@@ -3,23 +3,49 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, Bell, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { cn } from '@/lib/utils';
 
 interface AddTaskDialogProps {
-  onAdd: (name: string, time: string, interval: number) => void;
+  onAdd: (name: string, time: string, interval: number, days: number[]) => void;
 }
+
+const DAYS = [
+  { id: 1, label: 'M' },
+  { id: 2, label: 'D' },
+  { id: 3, label: 'W' },
+  { id: 4, label: 'D' },
+  { id: 5, label: 'V' },
+  { id: 6, label: 'Z' },
+  { id: 0, label: 'Z' },
+];
 
 const AddTaskDialog = ({ onAdd }: AddTaskDialogProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [time, setTime] = useState('21:00');
   const [interval, setInterval] = useState('5');
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
+
+  const toggleDay = (dayId: number) => {
+    setSelectedDays(prev => 
+      prev.includes(dayId) ? prev.filter(d => d !== dayId) : [...prev, dayId]
+    );
+  };
+
+  const toggleAllDays = () => {
+    if (selectedDays.length === 7) {
+      setSelectedDays([]);
+    } else {
+      setSelectedDays([1, 2, 3, 4, 5, 6, 0]);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && time) {
-      onAdd(name, time, parseInt(interval));
+    if (name && time && selectedDays.length > 0) {
+      onAdd(name, time, parseInt(interval), selectedDays);
       setName('');
       setOpen(false);
     }
@@ -28,7 +54,7 @@ const AddTaskDialog = ({ onAdd }: AddTaskDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="fixed bottom-32 right-6 w-14 h-14 rounded-full shadow-2xl bg-indigo-600 hover:bg-indigo-700 text-white p-0 z-40">
+        <Button className="fixed bottom-36 right-6 w-14 h-14 rounded-full shadow-2xl bg-indigo-600 hover:bg-indigo-700 text-white p-0 z-40">
           <Plus className="w-8 h-8" />
         </Button>
       </DialogTrigger>
@@ -47,6 +73,38 @@ const AddTaskDialog = ({ onAdd }: AddTaskDialogProps) => {
               className="text-lg h-12 rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               required
             />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <Label className="dark:text-slate-300">Dagen</Label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                onClick={toggleAllDays}
+                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold"
+              >
+                {selectedDays.length === 7 ? 'Deselecteer alles' : 'Selecteer alles'}
+              </Button>
+            </div>
+            <div className="flex justify-between gap-1">
+              {DAYS.map((day) => (
+                <button
+                  key={day.id}
+                  type="button"
+                  onClick={() => toggleDay(day.id)}
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all",
+                    selectedDays.includes(day.id) 
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none" 
+                      : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
+                  )}
+                >
+                  {day.label}
+                </button>
+              ))}
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -75,11 +133,6 @@ const AddTaskDialog = ({ onAdd }: AddTaskDialogProps) => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
-            <Bell className="w-4 h-4 text-indigo-500" />
-            <span className="dark:text-slate-400">We blijven je herinneren tot je afvinkt.</span>
           </div>
 
           <DialogFooter>

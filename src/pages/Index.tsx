@@ -14,12 +14,14 @@ const Index = () => {
     requestNotificationPermission();
   }, []);
 
-  const completedCount = tasks.filter(t => t.completed).length;
-  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
+  const todayDay = new Date().getDay();
+  const todayTasks = tasks.filter(t => t.days.includes(todayDay));
+  
+  const completedCount = todayTasks.filter(t => t.completed).length;
+  const progress = todayTasks.length > 0 ? (completedCount / todayTasks.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
-      {/* Header met extra top padding voor Android status bar */}
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-40">
       <header className="bg-white dark:bg-slate-900 px-6 pt-16 pb-8 rounded-b-[2.5rem] shadow-sm">
         <div className="flex justify-between items-start mb-6">
           <motion.div 
@@ -40,7 +42,6 @@ const Index = () => {
           </motion.div>
         </div>
 
-        {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm font-medium">
             <span className="text-slate-600 dark:text-slate-400">Je voortgang</span>
@@ -57,9 +58,8 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Task List */}
       <main className="px-6 mt-8">
-        {tasks.length === 0 ? (
+        {todayTasks.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -68,14 +68,14 @@ const Index = () => {
             <div className="bg-white dark:bg-slate-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
               <Plus className="w-10 h-10 text-slate-300 dark:text-slate-700" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Nog geen taken</h3>
-            <p className="text-slate-500 dark:text-slate-400">Voeg je eerste gewoonte toe!</p>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Geen taken voor vandaag</h3>
+            <p className="text-slate-500 dark:text-slate-400">Geniet van je vrije dag of voeg er een toe!</p>
           </motion.div>
         ) : (
           <div className="space-y-1">
             <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Jouw gewoontes</h2>
             <AnimatePresence mode="popLayout">
-              {tasks.map((task, index) => (
+              {todayTasks.map((task, index) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, y: 20 }}

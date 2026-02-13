@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Task } from '../types/task';
 import { sendNotification } from '../lib/notifications';
 
@@ -7,12 +7,10 @@ const STORAGE_KEY = 'habit_tasks';
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Load tasks
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsedTasks = JSON.parse(saved);
-      // Reset completion status if it's a new day
       const today = new Date().toDateString();
       const updatedTasks = parsedTasks.map((task: Task) => {
         if (task.lastCompletedDate && new Date(task.lastCompletedDate).toDateString() !== today) {
@@ -24,47 +22,44 @@ export const useTasks = () => {
     }
   }, []);
 
-  // Save tasks
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
 
-  // Reminder Logic
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const todayDay = now.getDay();
       
       tasks.forEach(task => {
-        if (!task.completed) {
+        // Check of taak voor vandaag is en nog niet voltooid
+        if (!task.completed && task.days.includes(todayDay)) {
           const [taskHour, taskMin] = task.time.split(':').map(Number);
           const taskTimeDate = new Date();
           taskTimeDate.setHours(taskHour, taskMin, 0, 0);
 
           if (now >= taskTimeDate) {
-            // Check if we should notify based on interval
-            // For simplicity in this web demo, we check every minute
-            // In a real app, we'd track 'lastNotified'
             const diffMs = now.getTime() - taskTimeDate.getTime();
             const diffMins = Math.floor(diffMs / 60000);
             
             if (diffMins % task.interval === 0) {
-              sendNotification("Tijd voor je taak!", `Vergeet niet: ${task.name}`);
+              sendNotification("HabitHero Herinnering", `Vergeet niet: ${task.name}`);
             }
           }
         }
       });
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [tasks]);
 
-  const addTask = (name: string, time: string, interval: number) => {
+  const addTask = (name: string, time: string, interval: number, days: number[]) => {
     const newTask: Task = {
       id: crypto.randomUUID(),
       name,
       time,
       interval,
+      days,
       completed: false,
       lastCompletedDate: null,
       streak: 0,

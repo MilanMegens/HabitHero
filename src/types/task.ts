@@ -7,6 +7,7 @@ export interface Task {
   lastCompletedDate: string | null; // ISO date string
   streak: number;
   createdAt: string;
+  days: number[]; // 0 = Zondag, 1 = Maandag, ..., 6 = Zaterdag
 }
 
 export interface TaskReminder {
