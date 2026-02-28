@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Task } from '../types/task';
 import { sendNotification } from '../lib/notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 const STORAGE_KEY = 'habit_tasks';
 
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Laden van taken
+  // Laden van taken en opschonen van oude meldingen
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsedTasks = JSON.parse(saved);
-      const today = new Date().toDateString();
-      
-      // Reset completed status als het een nieuwe dag is
-      const updatedTasks = parsedTasks.map((task: Task) => {
-        const lastDate = task.lastCompletedDate ? new Date(task.lastCompletedDate).toDateString() : null;
-        if (lastDate && lastDate !== today) {
-          return { ...task, completed: false, lastNotificationTime: null };
-        }
-        return task;
-      });
-      setTasks(updatedTasks);
-    }
+    const loadTasks = async () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsedTasks = JSON.parse(saved);
+        const today = new Date().toDateString();
+        
+        const updatedTasks = parsedTasks.map((task: Task) => {
+          const lastDate = task.lastCompletedDate ? new Date(task.lastCompletedDate).toDateString() : null;
+          if (lastDate && lastDate !== today) {
+            return { ...task, completed: false, lastNotificationTime: null };
+          }
+          return task;
+        });
+        setTasks(updatedTasks);
+        
+        // Sync native notifications
+        syncNativeNotifications(updatedTasks);
+      }
+    };
+    loadTasks();
   }, []);
 
   // Opslaan van taken
@@ -31,50 +37,75 @@ export const useTasks = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
 
-  // De "Agressieve" Reminder Loop
+  // Native Notifications inplannen
+  const syncNativeNotifications = async (currentTasks: Task[]) => {
+    // Eerst alle bestaande meldingen verwijderen om dubbelingen te voorkomen
+    const pending = await LocalNotifications.getPending();
+    if (pending.notifications.length > 0) {
+      await LocalNotifications.cancel(pending);
+    }
+
+    const now = new Date();
+    const todayDay = now.getDay();
+
+    for (const task of currentTasks) {
+      if (!task.completed && task.days.includes(todayDay)) {
+        const [hour, min] = task.time.split(':').map(Number);
+        const scheduleDate = new Date();
+        scheduleDate.setHours(hour, min, 0, 0);
+
+        // Als de tijd al geweest is, plan hem dan in voor nu (agressief)
+        const finalDate = scheduleDate < now ? new Date(now.getTime() + 5000) : scheduleDate;
+
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: "HabitHero Herinnering",
+              body: `Tijd voor: ${task.name}!`,
+              id: Math.abs(task.id.split('-').reduce((a, b) => a + b.charCodeAt(0), 0)),
+              schedule: { 
+                at: finalDate,
+                repeats: true,
+                every: 'minute', // Dit zorgt voor de 'agressieve' herhaling
+                allowWhileIdle: true
+              },
+              sound: 'beep.wav',
+              ongoing: true, // Maakt de melding lastiger weg te swipen
+            }
+          ]
+        });
+      }
+    }
+  };
+
+  // De "Agressieve" ntfy Loop (voor als de app WEL open staat)
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
       const todayDay = now.getDay();
       const nowTs = now.getTime();
       
-      let hasUpdates = false;
-      const updatedTasks = tasks.map(task => {
-        // Alleen checken als: niet voltooid EN vandaag is een actieve dag
+      tasks.forEach(task => {
         if (!task.completed && task.days.includes(todayDay)) {
           const [taskHour, taskMin] = task.time.split(':').map(Number);
           const taskTimeDate = new Date();
           taskTimeDate.setHours(taskHour, taskMin, 0, 0);
 
-          // Is de starttijd al geweest?
           if (now >= taskTimeDate) {
-            const diffMs = nowTs - taskTimeDate.getTime();
-            const diffMins = Math.floor(diffMs / 60000);
-            
-            // Moeten we nu een melding sturen? 
-            // (Elke 'interval' minuten sinds de starttijd)
+            const diffMins = Math.floor((nowTs - taskTimeDate.getTime()) / 60000);
             const shouldNotify = diffMins % task.interval === 0;
-            
-            // Voorkom dubbele meldingen in dezelfde minuut
             const lastNotified = task.lastNotificationTime || 0;
-            const minsSinceLastNotify = (nowTs - lastNotified) / 60000;
 
-            if (shouldNotify && minsSinceLastNotify >= 0.9) {
-              sendNotification("HabitHero Herinnering", `⚠️ Vergeet niet: ${task.name}`);
-              hasUpdates = true;
-              return { ...task, lastNotificationTime: nowTs };
+            if (shouldNotify && (nowTs - lastNotified) / 60000 >= 0.9) {
+              sendNotification("HabitHero", `⚠️ Vergeet niet: ${task.name}`);
+              // We updaten de state niet direct in de loop om infinite loops te voorkomen
+              // maar we gebruiken de ntfy call als extra trigger
             }
           }
         }
-        return task;
       });
-
-      if (hasUpdates) {
-        setTasks(updatedTasks);
-      }
     };
 
-    // Check elke 30 seconden voor maximale nauwkeurigheid
     const intervalId = setInterval(checkReminders, 30000);
     return () => clearInterval(intervalId);
   }, [tasks]);
@@ -92,28 +123,32 @@ export const useTasks = () => {
       streak: 0,
       createdAt: new Date().toISOString(),
     };
-    setTasks(prev => [...prev, newTask]);
+    const newTasks = [...tasks, newTask];
+    setTasks(newTasks);
+    syncNativeNotifications(newTasks);
   };
 
-  const toggleTask = (id: string) => {
-    setTasks(prev => prev.map(task => {
+  const toggleTask = async (id: string) => {
+    const updatedTasks = tasks.map(task => {
       if (task.id === id) {
         const isCompleting = !task.completed;
-        const today = new Date().toISOString();
         return {
           ...task,
           completed: isCompleting,
-          lastCompletedDate: isCompleting ? today : task.lastCompletedDate,
+          lastCompletedDate: isCompleting ? new Date().toISOString() : task.lastCompletedDate,
           streak: isCompleting ? task.streak + 1 : Math.max(0, task.streak - 1),
-          lastNotificationTime: isCompleting ? null : task.lastNotificationTime
         };
       }
       return task;
-    }));
+    });
+    setTasks(updatedTasks);
+    syncNativeNotifications(updatedTasks);
   };
 
   const deleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    const filtered = tasks.filter(t => t.id !== id);
+    setTasks(filtered);
+    syncNativeNotifications(filtered);
   };
 
   return { tasks, addTask, toggleTask, deleteTask };
