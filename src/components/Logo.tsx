@@ -14,15 +14,14 @@ const Logo = ({ className = "w-12 h-12" }: { className?: string }) => {
           <stop offset="100%" stopColor="#a855f7" />
         </linearGradient>
       </defs>
-      <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" />
+      <rect width="100" height="100" rx="24" fill="url(#logoGradient)" />
       <path 
-        d="M35 50L45 60L65 40" 
+        d="M30 50L45 65L70 35" 
         stroke="white" 
-        strokeWidth="8" 
+        strokeWidth="10" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
       />
-      <circle cx="75" cy="25" r="8" fill="#fbbf24" />
     </svg>
   );
 };

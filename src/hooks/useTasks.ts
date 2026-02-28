@@ -8,7 +8,6 @@ const STORAGE_KEY = 'habit_tasks';
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Laden van taken en opschonen van oude meldingen
   useEffect(() => {
     const loadTasks = async () => {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -24,22 +23,17 @@ export const useTasks = () => {
           return task;
         });
         setTasks(updatedTasks);
-        
-        // Sync native notifications
         syncNativeNotifications(updatedTasks);
       }
     };
     loadTasks();
   }, []);
 
-  // Opslaan van taken
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
 
-  // Native Notifications inplannen
   const syncNativeNotifications = async (currentTasks: Task[]) => {
-    // Eerst alle bestaande meldingen verwijderen om dubbelingen te voorkomen
     const pending = await LocalNotifications.getPending();
     if (pending.notifications.length > 0) {
       await LocalNotifications.cancel(pending);
@@ -54,7 +48,6 @@ export const useTasks = () => {
         const scheduleDate = new Date();
         scheduleDate.setHours(hour, min, 0, 0);
 
-        // Als de tijd al geweest is, plan hem dan in voor nu (agressief)
         const finalDate = scheduleDate < now ? new Date(now.getTime() + 5000) : scheduleDate;
 
         await LocalNotifications.schedule({
@@ -63,14 +56,15 @@ export const useTasks = () => {
               title: "HabitHero Herinnering",
               body: `Tijd voor: ${task.name}!`,
               id: Math.abs(task.id.split('-').reduce((a, b) => a + b.charCodeAt(0), 0)),
+              smallIcon: 'ic_stat_logo', // Gebruik het nieuwe logo icoontje
               schedule: { 
                 at: finalDate,
                 repeats: true,
-                every: 'minute', // Dit zorgt voor de 'agressieve' herhaling
+                every: 'minute',
                 allowWhileIdle: true
               },
               sound: 'beep.wav',
-              ongoing: true, // Maakt de melding lastiger weg te swipen
+              ongoing: true,
             }
           ]
         });
@@ -78,7 +72,6 @@ export const useTasks = () => {
     }
   };
 
-  // De "Agressieve" ntfy Loop (voor als de app WEL open staat)
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -98,8 +91,6 @@ export const useTasks = () => {
 
             if (shouldNotify && (nowTs - lastNotified) / 60000 >= 0.9) {
               sendNotification("HabitHero", `⚠️ Vergeet niet: ${task.name}`);
-              // We updaten de state niet direct in de loop om infinite loops te voorkomen
-              // maar we gebruiken de ntfy call als extra trigger
             }
           }
         }
