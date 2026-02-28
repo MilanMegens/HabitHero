@@ -1,33 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import BottomNav from '../components/BottomNav';
-import { Bell, Moon, Shield, Info, ChevronRight, Sun, ListTodo, AlertCircle } from 'lucide-react';
+import { Bell, Moon, Shield, Info, ChevronRight, Sun, ListTodo, ExternalLink, Send } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
-import { requestNotificationPermission } from '../lib/notifications';
+import { sendNotification } from '../lib/notifications';
 import { showSuccess, showError } from '../utils/toast';
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
-  const [hasPermission, setHasPermission] = useState(false);
+  const [ntfyTopic, setNtfyTopic] = useState('');
 
   useEffect(() => {
-    if ("Notification" in window) {
-      setHasPermission(Notification.permission === "granted");
-    }
+    const savedTopic = localStorage.getItem('ntfy_topic');
+    if (savedTopic) setNtfyTopic(savedTopic);
   }, []);
 
-  const handleEnableNotifications = async () => {
-    const granted = await requestNotificationPermission();
-    if (granted) {
-      setHasPermission(true);
-      showSuccess("Meldingen geactiveerd!");
-    } else {
-      showError("Toegang geweigerd. Controleer je browser instellingen.");
+  const saveNtfyTopic = (val: string) => {
+    const cleanTopic = val.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setNtfyTopic(cleanTopic);
+    localStorage.setItem('ntfy_topic', cleanTopic);
+  };
+
+  const handleTestNotification = async () => {
+    if (!ntfyTopic) {
+      showError("Vul eerst een topic in!");
+      return;
     }
+    await sendNotification("HabitHero Test", "Je ntfy.sh koppeling werkt perfect! 🚀");
+    showSuccess("Testbericht verstuurd!");
   };
 
   return (
@@ -40,31 +46,55 @@ const Settings = () => {
       </header>
 
       <main className="px-6 space-y-6">
-        {!hasPermission && (
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/50 p-4 rounded-3xl flex flex-col gap-3"
-          >
-            <div className="flex items-center gap-3 text-amber-800 dark:text-amber-400">
-              <AlertCircle className="w-5 h-5" />
-              <span className="text-sm font-semibold">Meldingen staan uit</span>
+        {/* ntfy.sh Sectie */}
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm space-y-4"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-orange-50 dark:bg-orange-900/30 p-2 rounded-xl">
+              <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <p className="text-xs text-amber-700 dark:text-amber-500">
-              Activeer meldingen om herinneringen te ontvangen voor je gewoontes.
+            <h2 className="font-bold dark:text-white text-lg">Meldingen via ntfy.sh</h2>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="ntfy-topic" className="text-xs text-slate-500 uppercase font-bold tracking-wider">Jouw Topic Naam</Label>
+            <div className="flex gap-2">
+              <Input 
+                id="ntfy-topic"
+                placeholder="bijv. mijn-gewoontes-123"
+                value={ntfyTopic}
+                onChange={(e) => saveNtfyTopic(e.target.value)}
+                className="rounded-xl dark:bg-slate-800 dark:border-slate-700"
+              />
+              <Button 
+                onClick={handleTestNotification}
+                variant="secondary"
+                className="rounded-xl px-3"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-tight">
+              Zorg dat je in de ntfy app geabonneerd bent op dit exacte topic.
             </p>
-            <Button 
-              onClick={handleEnableNotifications}
-              className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl h-10 text-sm"
-            >
-              Zet meldingen aan
-            </Button>
-          </motion.div>
-        )}
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="w-full rounded-xl text-xs gap-2 h-9"
+            onClick={() => window.open('https://ntfy.sh', '_blank')}
+          >
+            <ExternalLink className="w-3 h-3" /> Open ntfy.sh
+          </Button>
+        </motion.section>
 
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
         >
           <Link to="/all-tasks">
@@ -78,23 +108,7 @@ const Settings = () => {
               <ChevronRight className="w-5 h-5 text-slate-300" />
             </Button>
           </Link>
-        </motion.section>
-
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm"
-        >
-          <div className="flex items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded-xl">
-                <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <span className="font-medium dark:text-white">Notificaties</span>
-            </div>
-            <Switch checked={hasPermission} onCheckedChange={handleEnableNotifications} />
-          </div>
+          
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl">
@@ -140,7 +154,7 @@ const Settings = () => {
         </motion.section>
 
         <div className="text-center text-slate-400 text-sm pt-4">
-          Versie 1.0.0
+          Versie 1.1.0 (ntfy enabled)
         </div>
       </main>
 
